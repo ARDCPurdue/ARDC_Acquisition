@@ -1,0 +1,167 @@
+%Script Designed to collect dpgram for a given subject using the
+%Interacoustics Titan
+%Created by: Andrew
+%Updated: 12/2020
+%Based on code found in DPOAEgrowth.m from Hari:
+% https://github.com/haribharadwaj/codebasket/blob/master/DPOAE_ER10X_SPL/DPOAEgrowth.m
+
+clear all;
+clc;
+close all;
+
+addpath([pwd '\i3'])
+load TransducerCalIOWA.mat
+%% Initialize Parameters:
+
+
+filename = inputdlg('Please enter a name to save mat file as: ');
+
+%creating a new trial
+fs = 44.1e3;
+OAEI = OAE_Interface(fs);
+dur = 1.0;
+l_stim = dur*fs;
+trials_min = 16;
+trials_max = 32;
+
+f2 = [2e3, 3e3, 4e3, 6e3, 8e3];
+%f2 = 2e3;
+f1 = f2./1.22;
+f1 = f2;
+f3 = 2*f1-f2;
+
+%dB for F1 and F2
+dB = [65,55];
+
+%Setup
+noisefloor_dp = zeros(1,length(f2));
+DP = zeros(1,length(f2));
+
+%% Run dpOAEs:
+
+dpfig = figure;
+xticks(f2);
+xlabel('Frequency (Hz)');
+ylabel('DP (dB SPL)');
+xlim([1e3,10e3])
+set(gca,'XScale','log');
+grid on
+set(gcf,'Position',[1925,-5,1920,1200])
+
+hold on
+plot(f1,dB(1)*ones(1,length(f1)),'kx-','LineWidth', 1);
+plot(f2,dB(2)*ones(1,length(f2)),'ks-','LineWidth', 1);
+plot(f2,DP,'k-o','LineWidth',1.5);
+plot(f2,noisefloor_dp,'r-','LineWidth',1.5);
+title('DP Gram');
+legend('F_1','F_2','DP','Noise Floor'); 
+hold off
+
+for i = 1:length(f2)
+    disp(['Frequency (F2): ', num2str(f2(i))])
+    %Apply calibration coefficients to get right mV outputs
+    mV_amp = get_mV([f1(i),f2(i)],[dB(1),dB(2)]);
+    
+    trial_f = 0;
+    stillCollect = true;
+    
+    while(stillCollect && (trial_f < trials_max))
+        trial_f = trial_f + 1;
+        disp(['Trial: ', num2str(trial_f)]);
+        
+        OAEI.StartTrial(f1(i),f2(i),mV_amp,2000);
+        pause(dur);
+        OAEI.StopTrial();
+        
+        OAE_response(:,trial_f) = reshape(OAEI.response.',[],1);
+        
+        if(trial_f >= trials_min)
+            
+            OAE_noise = OAE_response;
+            OAE_noise(:,2:2:end) = -1*OAE_noise(:,2:2:end);
+            
+            noise = mean(OAE_noise,2);
+            signal = mean(OAE_response,2);
+            
+            w = dpss(numel(noise),1,1)';
+            w = w/sum(w);
+            
+            f_dp = f1(i);
+            
+            t_calc = (0:(numel(noise)-1))/fs;
+            wsn = w.*sin(2*pi*f_dp*t_calc);
+            wcn = w.*cos(2*pi*f_dp*t_calc);
+            
+            mic_sens = abs(ppval(pp.micSens,f_dp)); %mV/Pa
+            ref = 20e-6;
+            factor = 1/(mic_sens*ref);
+            
+            noisefloor_dp(i) = db(sqrt(sum(wsn.*noise')^2 + sum(wcn.*noise')^2) * factor);
+            DP(i) =  db(sqrt(sum(wsn.*signal')^2 + sum(wcn.*signal')^2) * factor);
+
+            nfloor = noisefloor_dp(i)
+            
+            %plot(f2(i),DP(i),'bo')
+            
+            if(nfloor < -25)
+                stillCollect = false;
+            end
+            
+        end
+        %plot(oae_response);
+    end
+    
+    %     plot(f2(i),DP(i),'ko','MarkerSize',13)
+    OAE_mean_response(:,i) = mean(OAE_response,2);
+    trials_collected(i) = trial_f;
+    
+    close(dpfig)
+    dpfig = figure;
+    hold on
+    plot(f1,dB(1)*ones(1,length(f1)),'kx-','LineWidth', 1);
+    plot(f2,dB(2)*ones(1,length(f2)),'ks-','LineWidth', 1);
+    plot(f2,DP,'k-o','LineWidth',1.5);
+    plot(f2,noisefloor_dp,'r-','LineWidth',1.5);
+    legend('F_1','F_2','DP','Noise Floor'); 
+    set(gca,'XScale','log');
+    set(gcf,'Position',[1925,-5,1920,1200])
+    xlabel('Frequency (Hz)');
+    ylabel('DP (dB SPL)');
+    xlim([1e3,10e3])
+    grid on 
+    
+    hold off
+    
+end
+
+
+oae_data.f2 = f2;
+oae_data.DP = DP;
+oae_data.noisefloor_dp = noisefloor_dp;
+oae_data.mean_response = OAE_mean_response;
+
+cd Data
+save([filename{1},'.mat'],'-struct','oae_data');
+
+
+%% Quick Plot of DPgram from mat file
+
+filename = '.mat';
+load(filename);
+
+figure;
+
+set(gca,'XScale','log');
+xticks(f2);
+xlabel('Frequency (Hz)');
+ylabel('DP (dB SPL)');
+xlim([1e3,10e3])
+ylim([-50,100])
+grid on
+
+hold on
+plot(f2,DP,'k-o','LineWidth',1.5);
+plot(f2,noisefloor_dp,'r','LineWidth',1.5);
+hold off
+
+title('DP Gram')
