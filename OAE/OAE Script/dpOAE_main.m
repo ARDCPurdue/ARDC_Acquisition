@@ -1,7 +1,7 @@
 %Script Designed to collect dpgram for a given subject using the
 %Interacoustics Titan
 %Created by: Andrew
-%Updated: 02/2021
+%Updated: 08/2022
 %Based on code found in DPOAEgrowth.m from Hari:
 % https://github.com/haribharadwaj/codebasket/blob/master/DPOAE_ER10X_SPL/DPOAEgrowth.m
 
@@ -11,7 +11,15 @@ close all;
 
 addpath([pwd '\i3'])
 load TransducerCalIOWA.mat
-dataPath = 'D:\ARDC\Pilot Study\OAE';
+
+%Be sure to update the dataPath as needed. All OAE data will be saved here.
+dataPath = 'D:\ARDC\TEST_DIR\OAE';
+
+%check to make sure dataPath exists
+if(exist(dataPath,'dir')==0)
+    mkdir(dataPath);
+end
+
 orig_path = pwd;
 %% Initialize Parameters:
 
@@ -53,7 +61,7 @@ ylabel('DP (dB SPL)');
 xlim([1e3,10e3])
 set(gca,'XScale','log');
 grid on
-set(gcf,'Position',[1925,-5,1920,1200])
+set(gcf,'Position',[1 41 1920 1083],'Units','pixels')
 
 hold on
 plot(f1,dB(1)*ones(1,length(f1)),'kx-','LineWidth', 1);
@@ -66,13 +74,17 @@ hold off
 
 press = zeros(100,1);
 
-while(max(press)<50)
-        disp('Place probe in ear')
-        OAEI.SetPressure(50,20,0);
-        press = OAEI.pressure;
-end        
-OAEI.SetPressure(0,20,0);
-disp('Probe in ear!')
+try
+    while(max(press)<50)
+            disp('Place probe in ear')
+            OAEI.SetPressure(50,20,0);
+            press = OAEI.pressure;
+    end        
+    OAEI.SetPressure(0,20,0);
+    disp('Probe in ear!')
+catch
+    error('Cannot set pressure. Is device turned on and connected?')
+end
 
 for i = 1:length(f2)
     disp(['Frequency (F2): ', num2str(f2(i))])
@@ -156,7 +168,7 @@ for i = 1:length(f2)
     plot(f2,noisefloor_dp,'r-','LineWidth',1.5);
     legend('F_1','F_2','DP','Noise Floor'); 
     set(gca,'XScale','log');
-    set(gcf,'Position',[1925,-5,1920,1200])
+    set(gcf,'Position',[1 41 1920 1083],'Units','pixels')
     xlabel('Frequency (Hz)');
     ylabel('DP (dB SPL)');
     xlim([1e3,10e3])

@@ -14,7 +14,7 @@ f1 = f2./1.22;
     plot(f2,noisefloor_dp,'r-','LineWidth',1.5);
     legend('F_1','F_2','DP','Noise Floor'); 
     set(gca,'XScale','log');
-    set(gcf,'Position',[1925,-5,1920,1200])
+    set(gcf,'Position',[1 41 1920 1083],'Units','pixels')
     xlabel('Frequency (Hz)');
     ylabel('DP (dB SPL)');
     xlim([500,10e3])

@@ -7,14 +7,12 @@ researcher = entries{2};
 
 %LR
 %TODO REVISE TO LOAD BOTH INTO FILE RELEVANT TO PROTOCOL
-LR = questdlg('Which ear is being tested? ','Ear','Left','Right','Audiogram','Left');
+LR = questdlg('Which ear is being tested? ','Ear','Left','Right','Left');
 switch LR
     case 'Left'
         side = 'L';
     case 'Right'
         side = 'R';
-    case 'Audiogram'
-        side = '';
 end
 
 start_time = datetime('now');
