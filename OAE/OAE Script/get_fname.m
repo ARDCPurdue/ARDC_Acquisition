@@ -16,8 +16,10 @@ switch LR
 end
 
 start_time = datetime('now');
-filename = strcat(entries{1},'_',protocol,'_',side,'_',num2str(month(start_time)),'_',num2str(day(start_time)),'_',num2str(year(start_time)));
+start_time.Format = 'MMddyyyy';
 
+% filename = strcat(entries{1},'_',protocol,'_',side,'_',num2str(month(start_time)),'_',num2str(day(start_time)),'_',num2str(year(start_time)));
+filename = strcat(entries{1},'_',string(start_time),'_',protocol,'_',side);
 %check for duplicates
 
 files = dir(fullfile(dataDir,'*.mat'));
