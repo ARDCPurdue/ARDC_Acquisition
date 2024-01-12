@@ -2,6 +2,7 @@
 %Interacoustics Titan
 %Created by: Andrew
 %Updated: 08/2022
+%Figure size changed by SH on 12/2023
 %Based on code found in DPOAEgrowth.m from Hari:
 % https://github.com/haribharadwaj/codebasket/blob/master/DPOAE_ER10X_SPL/DPOAEgrowth.m
 
@@ -13,7 +14,7 @@ addpath([pwd '\i3'])
 load TransducerCalIOWA.mat
 
 %Be sure to update the dataPath as needed. All OAE data will be saved here.
-dataPath = 'D:\ARDC\TEST_DIR\OAE';
+dataPath = 'C:\Users\ARDC User\Desktop\DATA';
 
 %check to make sure dataPath exists
 if(exist(dataPath,'dir')==0)
@@ -25,6 +26,7 @@ orig_path = pwd;
 
 %filename = inputdlg('Please enter a name to save mat file as: ');
 [filename, researcher, start_time] = get_fname('OAE',dataPath);
+filename = char(filename);
 
 %creating a new trial
 fs = 44100;
@@ -61,7 +63,7 @@ ylabel('DP (dB SPL)');
 xlim([1e3,10e3])
 set(gca,'XScale','log');
 grid on
-set(gcf,'Position',[1 41 1920 1083],'Units','pixels')
+set(gcf,'Position',[100 500 600 400],'Units','pixels')
 
 hold on
 plot(f1,dB(1)*ones(1,length(f1)),'kx-','LineWidth', 1);
@@ -168,7 +170,7 @@ for i = 1:length(f2)
     plot(f2,noisefloor_dp,'r-','LineWidth',1.5);
     legend('F_1','F_2','DP','Noise Floor'); 
     set(gca,'XScale','log');
-    set(gcf,'Position',[1 41 1920 1083],'Units','pixels')
+    set(gcf,'Position',[100 500 600 400],'Units','pixels')
     xlabel('Frequency (Hz)');
     ylabel('DP (dB SPL)');
     xlim([1e3,10e3])
