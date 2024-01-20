@@ -6,7 +6,7 @@ function getSelectedRadioButtons
 global output_reflex
 
 % Create the main figure
-fig = figure('Name', 'Enter Reflex Results', 'NumberTitle', 'off', 'Position', [100, 100, 1100, 800],'Units','Normalized');
+fig = figure('Name', 'Enter Reflex Results', 'NumberTitle', 'off', 'Position', [100, 100, 1200, 550],'Units','Normalized');
 
 % Define frequencies and levels
 frequencies = {'.5', '1', '2', '4'};
@@ -15,16 +15,21 @@ conditions = {'Right Contra', 'Left Contra', 'Right Ipsi', 'Left Ipsi'};
 
 % Create column headers
 x_mg = 150; 
-y_mg = 200;
+y_mg = 220;
 width_mg = 320;
-height_mg = 20;
-xoffset_mg = 500;
-yoffset_mg = 2*y_mg;
+height_mg = 25;
+xoffset_mg = 550;
+yoffset_mg = 250;
 
-colHeader_RC = uicontrol('Style', 'text', 'String', conditions{1}, 'Position', [x_mg, y_mg, width_mg, height_mg], 'HorizontalAlignment', 'center');
-colHeader_LC = uicontrol('Style', 'text', 'String', conditions{2}, 'Position', [x_mg+xoffset_mg, y_mg, width_mg, height_mg], 'HorizontalAlignment', 'center');
-colHeader_RI = uicontrol('Style', 'text', 'String', conditions{3}, 'Position', [x_mg, y_mg+yoffset_mg, width_mg, height_mg], 'HorizontalAlignment', 'center');
-colHeader_LI = uicontrol('Style', 'text', 'String', conditions{4}, 'Position', [x_mg+xoffset_mg, y_mg+yoffset_mg, width_mg, height_mg], 'HorizontalAlignment', 'center');
+colHeader_RC = uicontrol('Style', 'text', 'String', conditions{1}, 'Position', [x_mg, y_mg+25, width_mg, height_mg], 'HorizontalAlignment', 'center', 'FontSize', 16, 'ForegroundColor', 'r');
+colHeader_LC = uicontrol('Style', 'text', 'String', conditions{2}, 'Position', [x_mg+xoffset_mg, y_mg+25, width_mg, height_mg], 'HorizontalAlignment', 'center', 'FontSize', 16, 'ForegroundColor', 'b');
+colHeader_RI = uicontrol('Style', 'text', 'String', conditions{3}, 'Position', [x_mg, y_mg+yoffset_mg+25, width_mg, height_mg], 'HorizontalAlignment', 'center', 'FontSize', 16, 'ForegroundColor', 'r');
+colHeader_LI = uicontrol('Style', 'text', 'String', conditions{4}, 'Position', [x_mg+xoffset_mg, y_mg+yoffset_mg+25, width_mg, height_mg], 'HorizontalAlignment', 'center', 'FontSize', 16, 'ForegroundColor', 'b');
+
+colSubHeader_RC = uicontrol('Style', 'text', 'String', 'Probe Right, Stim Left', 'Position', [x_mg, y_mg, width_mg, height_mg], 'HorizontalAlignment', 'center', 'FontSize', 14);
+colSubHeader_LC = uicontrol('Style', 'text', 'String', 'Probe Left, Stim Right', 'Position', [x_mg+xoffset_mg, y_mg, width_mg, height_mg], 'HorizontalAlignment', 'center', 'FontSize', 14);
+colSubHeader_RI = uicontrol('Style', 'text', 'String', 'Probe Right, Stim Right', 'Position', [x_mg, y_mg+yoffset_mg, width_mg, height_mg], 'HorizontalAlignment', 'center', 'FontSize', 14);
+colSubHeader_LI = uicontrol('Style', 'text', 'String', 'Probe Left, Stim Left', 'Position', [x_mg+xoffset_mg, y_mg+yoffset_mg, width_mg, height_mg], 'HorizontalAlignment', 'center', 'FontSize', 14);
 
 offs = [0,0;1,0;0,1;1,1];
 
@@ -32,8 +37,8 @@ for g = 1:4
     for j = 1:numel(levels)
         x = (j - 1) * 40 + 90;
         x = x+offs(g,1)*xoffset_mg;
-        y = 180+offs(g,2)*yoffset_mg;
-        uicontrol('Style', 'text', 'String', levels{j}, 'Position', [x, y, 40, 20], 'HorizontalAlignment', 'left');
+        y = 193+offs(g,2)*yoffset_mg;
+        uicontrol('Style', 'text', 'String', levels{j}, 'Position', [x, y, 40, 20], 'HorizontalAlignment', 'left', 'FontSize', 14);
     end
 end
 
@@ -46,10 +51,11 @@ selectedMatrix = zeros(numel(frequencies), numel(levels), 4);
 % Create row headers and radio buttons
 for g2 = 1:4
     for i = 1:numel(frequencies)
-        y = (numel(frequencies) - i) * 30 + 60;
+        y = (numel(frequencies) - i) * 30 + 70;
         y = y+offs(g2,2)*yoffset_mg;
+        x = 60 + offs(g2,1)*xoffset_mg; 
         % Create row label
-        uicontrol('Style', 'text', 'String', frequencies{i}, 'Position', [10, y, 30, 20], 'HorizontalAlignment', 'center');
+        uicontrol('Style', 'text', 'String', frequencies{i}, 'Position', [x, y+6, 30, 20], 'HorizontalAlignment', 'center', 'FontSize', 14);
         
         % Create radio buttons for each level in the current row
         for j = 1:numel(levels)
@@ -63,7 +69,7 @@ end
 % Button to trigger updating the matrix
 
 buttonStatus = 'off';
-updateButton = uicontrol('Style', 'pushbutton', 'String', 'Update Matrix', 'Position', [200, 20, 100, 30], 'Callback', @(~, ~) updateAndPrint(levels),'Enable',buttonStatus);
+updateButton = uicontrol('Style', 'pushbutton', 'String', 'Update Matrix', 'Position', [520, 15, 160, 50],'FontSize', 16,  'Callback', @(~, ~) updateAndPrint(levels),'Enable',buttonStatus, 'BackgroundColor', [220, 220, 220]./255);
 
 % Callback function for radio buttons
     function radioButtonCallback(~, ~, rowIndex, colIndex, levels, cond)
@@ -79,10 +85,12 @@ updateButton = uicontrol('Style', 'pushbutton', 'String', 'Update Matrix', 'Posi
         switch enable_exit
             case 1
                 buttonStatus = 'on';
+                colorStatus = [0, 171, 102]./255; 
             case 0
                 buttonStatus = 'off';
+                colorStatus = [220, 220, 220]./255; 
         end
-        updateButton = uicontrol('Style', 'pushbutton', 'String', 'Update Matrix', 'Position', [200, 20, 100, 30], 'Callback', @(~, ~) updateAndPrint(levels),'Enable',buttonStatus);
+        updateButton = uicontrol('Style', 'pushbutton', 'String', 'Update Matrix', 'Position', [520, 15, 160, 50], 'FontSize', 16, 'Callback', @(~, ~) updateAndPrint(levels),'Enable',buttonStatus, 'BackgroundColor', colorStatus);
     end
 
 % Function to update and print the matrix
