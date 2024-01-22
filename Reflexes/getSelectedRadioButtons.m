@@ -38,7 +38,7 @@ for g = 1:4
         x = (j - 1) * 40 + 90;
         x = x+offs(g,1)*xoffset_mg;
         y = 193+offs(g,2)*yoffset_mg;
-        uicontrol('Style', 'text', 'String', levels{j}, 'Position', [x, y, 40, 20], 'HorizontalAlignment', 'left', 'FontSize', 14);
+        uicontrol('Style', 'text', 'String', levels{j}, 'Position', [x, y, 45, 20], 'HorizontalAlignment', 'left', 'FontSize', 12);
     end
 end
 
@@ -55,7 +55,7 @@ for g2 = 1:4
         y = y+offs(g2,2)*yoffset_mg;
         x = 60 + offs(g2,1)*xoffset_mg; 
         % Create row label
-        uicontrol('Style', 'text', 'String', frequencies{i}, 'Position', [x, y+6, 30, 20], 'HorizontalAlignment', 'center', 'FontSize', 14);
+        uicontrol('Style', 'text', 'String', frequencies{i}, 'Position', [x, y+6, 30, 20], 'HorizontalAlignment', 'center', 'FontSize', 12);
         
         % Create radio buttons for each level in the current row
         for j = 1:numel(levels)
