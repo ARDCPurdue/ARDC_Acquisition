@@ -1,3 +1,4 @@
+
 %Script Designed to collect dpgram for a given subject using the
 %Interacoustics Titan
 %Created by: Andrew
@@ -13,7 +14,7 @@ addpath([pwd '\i3'])
 load TransducerCalIOWA.mat
 
 %Be sure to update the dataPath as needed. All OAE data will be saved here.
-dataPath = 'D:\ARDC\TEST_DIR\OAE';
+dataPath = 'C:\Users\ARDC User\Desktop\CREARE_DATA';
 
 %check to make sure dataPath exists
 if(exist(dataPath,'dir')==0)
@@ -25,6 +26,7 @@ orig_path = pwd;
 
 %filename = inputdlg('Please enter a name to save mat file as: ');
 [filename, researcher, start_time] = get_fname('OAE',dataPath);
+filename = char(filename);
 
 %creating a new trial
 fs = 44100;
@@ -37,8 +39,11 @@ trials_max = 32;
 %f2 = [1e3,2e3,4e3,8e3];
 
 %Boystown Freqs
-f2 = [1e3, 2344, 3750, 4781, 6e3, 8e3];
+% f2 = [1e3, 2344, 3750, 4781, 6e3, 8e3];
 % f1 = f2;
+
+% CREARE Freqs
+f2 = [1008, 1500, 1992, 3000, 4008, 6000, 7992];
 
 f1 = f2./1.22;
 f3 = 2*f1-f2;
@@ -83,7 +88,7 @@ try
     OAEI.SetPressure(0,20,0);
     disp('Probe in ear!')
 catch
-    error('Cannot set pressure. Is d
+    error('Cannot set pressure. Is device turned on and connected?')
 end
 
 for i = 1:length(f2)
