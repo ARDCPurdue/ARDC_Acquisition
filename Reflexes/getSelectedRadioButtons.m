@@ -277,25 +277,38 @@ updateButton = uicontrol('Style', 'pushbutton', 'String', 'Update Matrix',...
         output_wrsL.listNumber = all_listnums{get(wrs_ListNumEntryL, 'Value')};
 
         if get(wrs_checkL, 'Value') == 0    % if check is unchecked
-            output_wrsL = 'Did not test';
+            output_wrsL.didNotTest = 1;
+        else
+            output_wrsL.didNotTest = 0; 
         end
 
         if get(wrs_checkR, 'Value') == 0    % if check is unchecked
-            output_wrsR = 'Did not test';
+            output_wrsR.didNotTest = 1;
+        else
+            output_wrsR.didNotTest = 0; 
         end
 
         output_wrs.R = output_wrsR; 
         output_wrs.L = output_wrsL; 
 
         if get(act_checkDNT, 'Value') == 1
-            output_act = "Did not test";
-        elseif get(act_checkCNT, 'Value') == 1
-            output_act = "Could not test";
+            didNotTest = 1;
         else
-            output_act = {get(act_Score1, 'String'); get(act_Score2, 'String')};
+            didNotTest = 0; 
         end
-
-
+        
+        if get(act_checkCNT, 'Value') == 1
+            couldNotTest = 1; 
+        else
+            couldNotTest = 0; 
+        end
+        
+        
+        ACTscore = {get(act_Score1, 'String'); get(act_Score2, 'String')};
+        output_act.score = ACTscore; 
+        output_act.couldNotTest = couldNotTest; 
+        output_act.didNotTest = didNotTest; 
+        
         closereq;
     end
 
