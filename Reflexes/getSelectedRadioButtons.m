@@ -292,18 +292,23 @@ updateButton = uicontrol('Style', 'pushbutton', 'String', 'Update Matrix',...
         output_wrs.L = output_wrsL; 
 
         if get(act_checkDNT, 'Value') == 1
-            output_act.didNotTest = 1;
-        elseif get(act_checkCNT, 'Value') == 1
-            output_act.couldNotTest = 1; 
+            didNotTest = 1;
         else
-            output_act.didNotTest = 0; 
-            output_act.couldNotTest = 0; 
+            didNotTest = 0; 
         end
-        output_act.score = {get(act_Score1, 'String'); get(act_Score2, 'String')};
+        
+        if get(act_checkCNT, 'Value') == 1
+            couldNotTest = 1; 
+        else
+            couldNotTest = 0; 
+        end
         
         
-
-
+        ACTscore = {get(act_Score1, 'String'); get(act_Score2, 'String')};
+        output_act.score = ACTscore; 
+        output_act.couldNotTest = couldNotTest; 
+        output_act.didNotTest = didNotTest; 
+        
         closereq;
     end
 
