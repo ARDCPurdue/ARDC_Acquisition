@@ -202,6 +202,8 @@ oae_data.noisefloor_dp = noisefloor_dp;
 oae_data.mean_response = OAE_mean_response;
 oae_data.fs = fs;
 
+alt_OAEanalysis(oae_data); 
+
 cd(dataPath)
 save([filename,'.mat'],'-struct','oae_data');
 
