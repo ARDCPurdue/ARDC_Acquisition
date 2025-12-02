@@ -18,7 +18,7 @@ classdef OAE_Interface < handle
         pressure;
         response;
         IsDone;
-
+        
     end
     
     methods
@@ -71,7 +71,7 @@ classdef OAE_Interface < handle
             stim2 = amplitude_mV(2)*sin(2*pi*bin_f2*freqStepSize*t).'; % create the stimulus
             
             self.i3.instrument.SetStimuli([stim1,stim2], [1 2]); % Set stimulus in the device configuration
-
+            
             %self.i3.instrument.SetStimuli(stim1, 1);
             
             self.conf.input.blockLength = length(stim1);% update the configuration by changing the block length.
@@ -118,6 +118,43 @@ classdef OAE_Interface < handle
             self.i3.instrument.Run(); % run the device with the current configuration
             self.lh(2).Enabled = true; % enable the logging of the mic response.
         end
+        
+        function StartTrial_v2(self, f1, f2, amplitude_mV, stimulusLength, N_trials)
+            
+            % setup stimulus
+            % i3 support only stimulus length > 256, 512 for fs = 44.1kHz
+            self.response=[];
+            self.N_trials = N_trials;
+            self.IsDone = false;
+            
+            T=1/self.fs; % Sampling period
+            t = (0:stimulusLength-1)*T;        % Time vector
+            % Pad by extra 10% of duration (which is T)
+            pad = zeros(ceil(self.fs * 0.1 * T), 1);
+            rampdur = 0.020;
+            ramp = hanning(ceil(self.fs * rampdur));
+            stim1 = amplitude_mV(1)*sin(2*pi*f1*t).'; % create the stimulus
+            stim1(1:floor(numel(ramp)/2)) = stim1(1:floor(numel(ramp)/2)) .* ramp(1:floor(numel(ramp)/2));
+            stim1((end-floor(numel(ramp)/2) + 1):end) = stim1((end-floor(numel(ramp)/2) + 1):end) .* ramp(floor(numel(ramp)/2+1:end));
+            stim2 = amplitude_mV(2)*sin(2*pi*f2*t).'; % create the stimulus
+            stim2(1:floor(numel(ramp)/2)) = stim2(1:floor(numel(ramp)/2)) .* ramp(1:floor(numel(ramp)/2));
+            stim2((end-floor(numel(ramp)/2) + 1):end) = stim2((end-floor(numel(ramp)/2) + 1):end) .* ramp(floor(numel(ramp)/2+1:end));
+            stim1 = [stim1(:); pad(:)];
+            stim2 = [stim2(:); pad(:)];
+            
+            self.i3.instrument.SetStimuli([stim1,stim2], [1 2]); % Set stimulus in the device configuration
+            
+            %self.i3.instrument.SetStimuli(stim1, 1);
+            
+            self.conf.input.blockLength = numel(stim1);% update the configuration by changing the block length.
+            % block length is the same for stimilus and response
+            self.i3.instrument.Configure(self.conf); %set the configuration in the device.
+            
+            % kick it all off, by set the device to run with the current configuration
+            self.i3.instrument.Run(); % run the device with the current configuration
+            self.lh(2).Enabled = true; % enable the logging of the mic response.
+        end
+        
         
         %         function ChangeStimulation(self, freq, amplitude_mV, stimulusLength)
         %             self.lh(2).Enabled = false; % disable the logging of the mic response.
