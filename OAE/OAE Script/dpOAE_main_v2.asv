@@ -57,7 +57,7 @@ noisefloor_dp = zeros(1,length(f2));
 DP = zeros(1,length(f2));
 f1_rec_dB = zeros(1,length(f2));
 f2_rec_dB = zeros(1,length(f2));
-raw_responses = nan(l_stim+1,trials_max,length(f2))
+raw_responses = nan(l_stim +1,trials_max,length(f2))
 
 %% Run dpOAEs:
 
@@ -167,7 +167,7 @@ for i = 1:length(f2)
     %     plot(f2(i),DP(i),'ko','MarkerSize',13)
     OAE_mean_response(:,i) = mean(OAE_response,2);
     trials_collected(i) = trial_f;
-    raw_responses(:,1:trial_f,i) = OAE_response; 
+    raw_responses(:,:,i) = OAE_response; 
     oae_data.raw_responses = raw_responses; 
 
     
