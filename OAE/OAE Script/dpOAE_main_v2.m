@@ -57,7 +57,7 @@ noisefloor_dp = zeros(1,length(f2));
 DP = zeros(1,length(f2));
 f1_rec_dB = zeros(1,length(f2));
 f2_rec_dB = zeros(1,length(f2));
-raw_responses = nan(l_stim+1,trials_max,length(f2));
+raw_responses = nan(l_stim+1,trials_min,length(f2));
 
 %% Run dpOAEs:
 
