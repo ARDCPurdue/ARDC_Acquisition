@@ -1,0 +1,235 @@
+%% Code to re-analyze DPOAEs from ARDC
+% Two problems with current ARDC set up:
+% 1 - there is a click at the end of each OAE stim because the ramping is
+% off
+% 2 - The sidelobes of the primaries are too big and overlap with the OAE
+% This artificially elevates the OAE level, even when no OAE is really
+% present.
+
+   %% To do: 
+   % Find local peaks!!! use those for amplitude
+   % change noise floor calculation to a percentange around the DP
+   % Save all the trials if running > 16 
+   % In the final data output, save all trials
+
+   % Data that's done, but needs reanalyzed 
+
+   % end visit will need updated to save full raw data.
+
+
+
+%% Analysis
+
+% Load the data
+load('C:\Users\saman\Downloads\ARDC544_11032025_OAE_R.mat')
+
+% Set some values to be reused throughout the loop
+dp_freq = 2*f1-f2;
+
+% window for fft of signal
+N_signal = numel(mean_response(:,1));
+w = dpss(N_signal,1,1)';
+w = w'/sum(w);
+N_signal2 = 2.^nextpow2(N_signal);
+
+% frequency vector for the fft
+f_out = fs*(0:(N_signal2/2))/N_signal2;
+
+% Mic sensitivity
+f_123 = [f1', f2', dp_freq']';
+load TransducerCalIOWA.mat
+
+mic_sens = ppval(pp.micSens,f_123); %mV/Pa
+ref = 20e-6; %reference value of p0 in Pa
+factor = 1./(mic_sens.*ref);
+
+% stuff for recreating stimuli
+dur = .5;
+stimulusLength = round(fs*dur);
+T=1/fs; % Sampling period
+t = (0:stimulusLength-1)*T;        % Time vector
+% Pad by extra 10% of duration (which is T)
+pad = zeros(ceil(fs * 0.1 * T), 1);
+rampdur = 0.020;
+ramp = hanning(ceil(fs * rampdur));
+
+% Loop over each frequency
+numOfF2s = numel(f2);
+
+% Set up for figure
+figure(11); 
+set(gcf, "Position", [100, 100, 900, 700], "Units", 'pixels')
+
+for whichf = 1:numOfF2s
+
+    % get the fft of the mean_response
+    fft_out(whichf, 1:N_signal2) = fft(w.*mean_response(:,whichf), N_signal2);
+
+    % just plot
+    hf_fft1 = fft_out(whichf,1:numel(f_out));
+    hf_fft = hf_fft1./(ppval(pp.micSens, f_out).*ref);
+    out = 20.*log10(abs(hf_fft));
+
+    % Just looking at exact frequency of interest
+    % new_amplitudes(:, whichf) = interp1(f_out, out, f_123(:,whichf));
+
+    % Finds peak nearest the frequency of interest
+    for j = 1:size(f_123,1)
+        regionOfInterest = find(f_out > f_123(j, whichf)-1 & f_out < f_123(j, whichf)+1); 
+        [peakOfInterest, index] = max(out(regionOfInterest)); 
+        new_amplitudes(j, whichf) = peakOfInterest; 
+        peakIndex(j, whichf) = regionOfInterest(index); 
+    end
+
+    % Find noise floor (using the calculated frequency)
+    %idx = find(round(f_out) >=round(dp_freq(whichf)),1);
+    %noise(whichf) = mean(out([idx-6:idx-2, idx+2:idx+6]));
+
+    % Find noise floor (using the peak as the freq of interest)
+    idx = peakIndex(3,whichf); 
+    noise(whichf) = mean(out([idx-5:idx-1,idx+1:idx+5])); 
+
+    % Can we also eliminate the stimulus from the spectrum for dpoae amplitude
+    % calculation?
+    stim1 = sin(2*pi*f1(whichf)*t)'; % create the stimulus
+    stim1(1:floor(numel(ramp)/2)) = stim1(1:floor(numel(ramp)/2)) .* ramp(1:floor(numel(ramp)/2));
+    stim1((end-floor(numel(ramp)/2) + 1):end) = stim1((end-floor(numel(ramp)/2) + 1):end) .* ramp(1:floor(numel(ramp)/2));
+    stim2 = sin(2*pi*f2(whichf)*t)'; % create the stimulus
+    stim2(1:floor(numel(ramp)/2)) = stim2(1:floor(numel(ramp)/2)) .* ramp(1:floor(numel(ramp)/2));
+    stim2((end-floor(numel(ramp)/2) + 1):end) = stim2((end-floor(numel(ramp)/2) + 1):end) .* ramp(1:floor(numel(ramp)/2));
+    stim1 = [stim1(:); pad(:)];
+    stim2 = [stim2(:); pad(:)];
+
+    idx1 = find(round(f_out) >=round(f1(whichf)),1);
+    amp_f1 = abs(hf_fft1(1,idx1));
+    idx2 = find(round(f_out) >=round(f2(whichf)),1);
+    amp_f2 = abs(hf_fft1(1,idx2));
+
+    stim1 = amp_f1 .* stim1;
+    stim2 = amp_f2 .* stim2;
+
+    fft_f1(whichf, 1:N_signal2) = fft(w.*stim1, N_signal2);
+    fft_f2(whichf, 1:N_signal2) = fft(w.*stim2, N_signal2);
+
+    % for the plots
+    hf_fft1_f1 = fft_f1(whichf,1:numel(f_out)).*2;
+    hf_fft_f1 = hf_fft1_f1./(ppval(pp.micSens, f_out).*ref);
+    out_f1 = 20.*log10(abs(hf_fft_f1));
+    hf_fft1_f2 = fft_f2(whichf,1:numel(f_out)).*2;
+    hf_fft_f2 = hf_fft1_f2./(ppval(pp.micSens, f_out).*ref);
+    out_f2 = 20.*log10(abs(hf_fft_f2));
+
+    clean_dp = hf_fft - (hf_fft_f1 + hf_fft_f2); 
+
+    out_clean_dp = out - (out_f1 + out_f2); 
+
+    figure(11); 
+    subplot(2,3,whichf)
+    hold on;
+    fill([200, 8000.*1.2], [-20noise(whichf), noise(whichf)])
+    plot(f_out, out, 'k')
+    plot(f_out, out_f1, 'Color',[138, 45, 64, 50]./255)
+    plot(f_out, out_f2, 'Color', [20, 10, 125, 50]./255)
+    xlim([f_123(3,whichf).*.80,f_123(2, whichf).*1.2])
+    ylim([-20, 70])
+    xticks([round(f_123([3,1,2],whichf))])
+    hold on;
+    plot(f_123(:,whichf), [f1_rec_dB(whichf), f2_rec_dB(whichf), DP(whichf)], 'ro', 'MarkerSize', 4, 'LineWidth', 1, 'Color', [.65,.65,.65])
+    plot(f_out(1,peakIndex(:,whichf)), [new_amplitudes(1, whichf), new_amplitudes(2,whichf), new_amplitudes(3,whichf)], 'x', 'MarkerSize',6, 'Color',[0.3216    0.1765    0.6118], 'LineWidth',1)
+    set(gca, 'XScale', 'log')
+    xlabel('Frequency (Hz)')
+    ylabel('Amplitude (dB SPL)')
+    title(sprintf('F2 = %d', f_123(2,whichf)))
+    %legend('Full resp.', 'F1', 'F2', 'Orig.','New Amps.', 'NoiseFloor')
+end
+
+%% Compare old data to new calculation
+ms =10;
+figure; hold on;
+plot(f_123(1,:), f1_rec_dB(1,:), 's-', "Color", [.8, .8, .8], 'LineWidth',1.5, 'MarkerSize', ms)
+plot(f_123(2,:), f2_rec_dB(1,:), '^-', "Color", [.8, .8, .8], 'LineWidth',1.5, 'MarkerSize', ms)
+plot(f_123(2,:), DP(1,:), 'x-', "Color", [.8, .8, .8], 'LineWidth',1.5, 'MarkerSize', ms)
+plot(f_123(2,:), noisefloor_dp, 'x--', "Color", [.8, .8, .8], 'LineWidth',1.5, 'MarkerSize', ms)
+plot(f_123(1,:), new_amplitudes(1,:), 's-', "Color", [0.3216    0.1765    0.6118], 'LineWidth',2, 'MarkerSize', ms)
+plot(f_123(2,:), new_amplitudes(2,:), '^-', "Color", [0.3216    0.1765    0.6118], 'LineWidth',2, 'MarkerSize', ms)
+plot(f_123(2,:), new_amplitudes(3,:), 'x-', "Color", [0.3216    0.1765    0.6118], 'LineWidth',2, 'MarkerSize', ms)
+plot(f_123(2,:), noise, 'x--', "Color", [0.3216    0.1765    0.6118], 'LineWidth',2, 'MarkerSize', ms)
+%legend('F_1','F_2','DP','Noise Floor');
+set(gca,'XScale','log');
+set(gcf,'Position',[100 100 600 400],'Units','pixels')
+xlabel('Frequency (Hz)');
+ylabel('DP (dB SPL)');
+xlim([.8e3,10e3])
+ylim([-40, 70])
+xticks([1000, 2000, 4000, 8000])
+grid on
+
+%% Next
+
+% 
+% amp_f1 =(f1_rec_dB(whichf));
+% amp_f2 = (f2_rec_dB(whichf));
+% 
+% 
+% dB = [amp_f1, amp_f2];
+% %dB = [65, 55];
+% dB = db2mag(dB);
+% dB = dB./factor(1:2);
+% dB = dB.*2; %because single-sided spectrum?
+% 
+% amplitude_mV = dB;
+% 
+% %noisefloor_all = db(sqrt(sum(wsn'.*noise).^2 + sum(wcn'.*noise).^2).* factor);
+% 
+% 
+% dur = .5;
+% stimulusLength = round(fs*dur);
+% T=1/fs; % Sampling period
+% t = (0:stimulusLength-1)*T;        % Time vector
+% % Pad by extra 10% of duration (which is T)
+% pad = zeros(ceil(fs * 0.1 * T), 1);
+% rampdur = 0.020;
+% ramp = hanning(ceil(fs * rampdur));
+% stim1 = amplitude_mV(1)*sin(2*pi*f1(whichf)*t).'; % create the stimulus
+% stim1(1:floor(numel(ramp)/2)) = stim1(1:floor(numel(ramp)/2)) .* ramp(1:floor(numel(ramp)/2));
+% stim1((end-floor(numel(ramp)/2) + 1):end) = stim1((end-floor(numel(ramp)/2) + 1):end) .* ramp(1:floor(numel(ramp)/2));
+% stim2 = amplitude_mV(2)*sin(2*pi*f2(whichf)*t).'; % create the stimulus
+% stim2(1:floor(numel(ramp)/2)) = stim2(1:floor(numel(ramp)/2)) .* ramp(1:floor(numel(ramp)/2));
+% stim2((end-floor(numel(ramp)/2) + 1):end) = stim2((end-floor(numel(ramp)/2) + 1):end) .* ramp(1:floor(numel(ramp)/2));
+% stim1 = [stim1(:); pad(:)];
+% stim2 = [stim2(:); pad(:)];
+% 
+% fft_f1 = fft(w.*stim1(:,1))./numel(stim1);
+% fft_f2 = fft(w.*stim2(:,1))./numel(stim2);
+% 
+% stims = fft_f1 + fft_f2;
+% figure;
+% hold on;
+% plot(f_out, abs(fft_f1(1:11026)), 'r');
+% plot(f_out, abs(fft_f2(1:11026)), 'b');
+% plot(f_out, abs(stims(1:11026)), 'g');
+% plot(f_out, abs(fft_out(1:11026)), 'k');
+% plot(f1(whichf), max(abs(fft_f1)), 'or')
+% plot(f2(whichf), max(abs(fft_f2)), 'ob')
+% plot(f2(whichf), max(abs(stims)), 'og')
+% 
+% 
+% figure;
+% diff = abs(fft_out) - abs(fft_f1) - abs(fft_f2);
+% plot(f_out, diff(1:11026))
+% 
+% %%
+% 
+% signal = mean_response(:, whichf);
+% stims = stim1 + stim2;
+% 
+% sig_clean = signal -stims;
+% 
+% 
+% t_calc = (0:(numel(signal)-1))/fs;
+% wsn = w.*sin(2*pi*f_123'*t_calc);
+% wcn = w.*cos(2*pi*f_123'*t_calc);
+% 
+% all_mags =  db(sqrt(sum(wsn'.*signal).^2 + sum(wcn'.*signal).^2).* factor)
+% all_stims =  db(sqrt(sum(wsn'.*stims).^2 + sum(wcn'.*stims).^2).* factor)
+% all_clean =  db(sqrt(sum(wsn'.*sig_clean).^2 + sum(wcn'.*sig_clean).^2).* factor)
