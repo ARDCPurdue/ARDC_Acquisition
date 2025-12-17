@@ -53,6 +53,7 @@ noisefloor_dp = zeros(1,length(f2));
 DP = zeros(1,length(f2));
 f1_rec_dB = zeros(1,length(f2));
 f2_rec_dB = zeros(1,length(f2));
+raw_responses = nan(l_stim,trials_max,length(f2)); 
 
 % Set up for figure
 dpfig = figure;
@@ -203,6 +204,7 @@ oae_data.mean_response = OAE_mean_response;
 oae_data.fs = fs;
 
 output = alt_OAEanalysis(oae_data);  
+output.raw_response = oae_data.raw_response; 
 
 cd(dataPath)
 save([filename,'.mat'],'-struct','output');
