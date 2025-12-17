@@ -98,7 +98,6 @@ for i = 1:length(f2)
     
     trial_f = 0;
     stillCollect = true;
-    numOfBlocks = 0; 
     
     while(stillCollect && (trial_f < trials_max))
        
@@ -115,16 +114,15 @@ for i = 1:length(f2)
 
         OAEI.StopTrial();
 
-        % Count number of trials/blocks
+        % Count number of trials
         trial_f = trial_f + trials_min;
-        numOfBlocks = numOfBlocks + 1; 
         
         %OAE_response(:,trial_f) = reshape(OAEI.response.',[],1);
         
         % Save the response
         singleblock_OAE_response = OAEI.response';
 
-        OAE_response(:,(numOfBlocks-1.*trials_min)+1:trial_f) = singleblock_OAE_response; 
+        OAE_response(:,trialf-trials_min+1:trial_f) = singleblock_OAE_response; 
         
         if(trial_f >= trials_min)
             
@@ -169,6 +167,7 @@ for i = 1:length(f2)
     trials_collected(i) = trial_f;
     raw_responses(:,:,i) = OAE_response; 
     oae_data.raw_responses = raw_responses; 
+
     
     close(dpfig)
     dpfig = figure;
