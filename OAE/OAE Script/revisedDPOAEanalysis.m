@@ -1,33 +1,14 @@
-function output = alt_OAEanalysis(oae_data, plot_yes)
 
-if nargin < 2
-    plot_yes = 1;
-end
+function revisedOAE = revisedDPOAEanalysis(oae_data, plot_yes)
 
 f1 = oae_data.f1;
 f2 = oae_data.f2;
 f1_rec_dB = oae_data.f1_rec_dB;
 f2_rec_dB = oae_data.f2_rec_dB;
 DP = oae_data.DP;
-noisefloor_dp =oae_data.noisefloor_dp;
-mean_response = oae_data.mean_response;
+noisefloor_dp =oae_data.noisefloor;
+full_response = oae_data.mean_response;
 fs = oae_data.fs;
-alltrials = oae_data.raw_responses;
-
-dp_freq = 2*f1-f2;
-N_signal = numel(mean_response(:,1));
-w = dpss(N_signal, 1,1)';
-w = w'/sum(w);
-N_signal2 = 2.^nextpow2(N_signal);
-
-%freq vector for the fft
-f_out = fs*(0:(N_signal2/2))/N_signal2;
-
-f_123 = [f1', f2', dp_freq']';
-load TransducerCalIOWA.mat
-
-mic_sens = ppval(pp.micSens,f_123); %mV/Pa
-ref = 20e-6; %reference value of p0 in Pa
 
 % stuff for recreating stimuli
 dur = .5;
@@ -39,29 +20,47 @@ pad = zeros(ceil(fs * 0.1 * T), 1);
 rampdur = 0.020;
 ramp = hanning(ceil(fs * rampdur));
 
+% need to window full_response to avoid the click
+mean_response = full_response(t>rampdur/2 & t < dur - rampdur/2,:); 
+
+% Set some values to be reused throughout the loop
+dp_freq = 2*f1-f2;
+
+% window for fft of signal
+N_signal = numel(mean_response(:,1));
+w = dpss(N_signal,1,1)';
+w = w'/sum(w);
+N_signal2 = 2.^nextpow2(N_signal);
+
+% frequency vector for the fft
+f_out = fs*(0:(N_signal2/2))/N_signal2;
+
+% Mic sensitivity
+f_123 = [f1', f2', dp_freq']';
+load TransducerCalIOWA.mat
+
+mic_sens = ppval(pp.micSens,f_123); %mV/Pa
+ref = 20e-6; %reference value of p0 in Pa
+factor = 1./(mic_sens.*ref);
+
 % Loop over each frequency
 numOfF2s = numel(f2);
 
-for whichf = 1:numOfF2s
+% Set up for figure
+if plot_yes
+    figure(11);
+    set(gcf, "Position", [100, 100, 1000, 700], "Units", 'pixels')
+end
 
-    noiseresponse = squeeze(alltrials(:,:,whichf));
-    noiseresponse(:,2:2:end) = -1*noiseresponse(:,2:2:end);
-    avgnoise = mean(noiseresponse,2);
+for whichf = 1:numOfF2s
 
     % get the fft of the mean_response
     fft_out(whichf, 1:N_signal2) = fft(w.*mean_response(:,whichf), N_signal2);
-
-    % get the fft of the noise_response
-    fft_noise(whichf, 1:N_signal2) = fft(w.*avgnoise, N_signal2);
 
     % just plot
     hf_fft1 = fft_out(whichf,1:numel(f_out));
     hf_fft = hf_fft1./(ppval(pp.micSens, f_out).*ref);
     out = 20.*log10(abs(hf_fft));
-
-    ns_fft1 = fft_noise(1:numel(f_out));
-    hf_ns = ns_fft1./(ppval(pp.micSens,f_out).*ref);
-    out_ns = 20.*log10(abs(hf_ns));
 
     % Just looking at exact frequency of interest
     % new_amplitudes(:, whichf) = interp1(f_out, out, f_123(:,whichf));
@@ -98,8 +97,8 @@ for whichf = 1:numOfF2s
     idx2 = find(round(f_out) >=round(f2(whichf)),1);
     amp_f2 = abs(hf_fft1(1,idx2));
 
-    stim1 = amp_f1 .* stim1;
-    stim2 = amp_f2 .* stim2;
+    stim1 = amp_f1 .* stim1(t>rampdur/2 & t < dur - rampdur/2,1);
+    stim2 = amp_f2 .* stim2(t>rampdur/2 & t < dur - rampdur/2,1);
 
     fft_f1(whichf, 1:N_signal2) = fft(w.*stim1, N_signal2);
     fft_f2(whichf, 1:N_signal2) = fft(w.*stim2, N_signal2);
@@ -111,10 +110,6 @@ for whichf = 1:numOfF2s
     hf_fft1_f2 = fft_f2(whichf,1:numel(f_out)).*2;
     hf_fft_f2 = hf_fft1_f2./(ppval(pp.micSens, f_out).*ref);
     out_f2 = 20.*log10(abs(hf_fft_f2));
-
-    clean_dp = hf_fft - (hf_fft_f1 + hf_fft_f2);
-
-    out_clean_dp = out - (out_f1 + out_f2);
 
     if plot_yes
         figure(11);
@@ -136,7 +131,6 @@ for whichf = 1:numOfF2s
         title(sprintf('F2 = %d', f_123(2,whichf)))
         %legend('Full resp.', 'F1', 'F2', 'Orig.','New Amps.', 'NoiseFloor')
     end
-
 end
 
 %% Compare old data to new calculation
@@ -162,14 +156,12 @@ if plot_yes
     grid on
 end
 
-output.f1 = oae_data.f1;
-output.f2 = oae_data.f2;
-output.f1_rec_dB = new_amplitudes(1,:);
-output.f2_rec_dB = new_amplitudes(2,:);
-output.DP = new_amplitudes(3,:);
-output.noisefloor_dp =noise;
-output.mean_response = oae_data.mean_response;
-output.fs = oae_data.fs;
-output.raw_responses = oae_data.raw_responses;
-
+revisedOAE.noisefloor = noise; 
+revisedOAE.mean_response = mean_response; 
+revisedOAE.f1 = f1; 
+revisedOAE.f2 = f2; 
+revisedOAE.DP = new_amplitudes(3,:); 
+revisedOAE.f1_rec_dB = new_amplitudes(1,:); 
+revisedOAE.f2_rec_dB = new_amplitudes(2,:); 
+revisedOAE.fs = fs; 
 end

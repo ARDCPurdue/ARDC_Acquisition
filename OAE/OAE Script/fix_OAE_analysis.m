@@ -7,14 +7,14 @@
 % present.
 
    %% To do: 
-   % Find local peaks!!! use those for amplitude
+   % done - Find local peaks!!! use those for amplitude
    % change noise floor calculation to a percentange around the DP
-   % Save all the trials if running > 16 
-   % In the final data output, save all trials
+   % done - Save all the trials if running > 16 
+   % done - In the final data output, save all trials
 
    % Data that's done, but needs reanalyzed 
 
-   % end visit will need updated to save full raw data.
+   % done - end visit will need updated to save full raw data.
 
 
 
