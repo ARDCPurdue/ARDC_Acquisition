@@ -125,7 +125,7 @@ for i = 1:length(f2)
         % Save the response
         singleblock_OAE_response = OAEI.response';
 
-        OAE_response(:,(numOfBlocks-1.*trials_min)+1:trial_f) = singleblock_OAE_response; 
+        OAE_response(:,((numOfBlocks-1)*trials_min)+1:trial_f) = singleblock_OAE_response; 
         
         if(trial_f >= trials_min)
             
