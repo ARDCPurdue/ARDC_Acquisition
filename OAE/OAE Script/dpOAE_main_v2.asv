@@ -171,7 +171,7 @@ for i = 1:length(f2)
     OAE_mean_response(:,i) = mean(OAE_response,2,"omitnan");
     trials_collected(i) = trial_f;
     raw_responses(:,:,i) = OAE_response; 
-    oae_data.raw_responses = raw_responses; 
+    oae_data.raw_response = raw_responses; 
     
     close(dpfig)
     dpfig = figure;
@@ -206,8 +206,7 @@ oae_data.mean_response = OAE_mean_response;
 oae_data.fs = fs;
 
 output = alt_OAEanalysis(oae_data);  
-output.researcher = researcher;
-output.time = start_time;
+output.raw_response = oae_data.raw_response; 
 
 cd(dataPath)
 save([filename,'.mat'],'-struct','output');

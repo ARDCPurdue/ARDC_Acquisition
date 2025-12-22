@@ -46,7 +46,7 @@ for whichf = 1:numOfF2s
 
     noiseresponse = squeeze(alltrials(:,:,whichf));
     noiseresponse(:,2:2:end) = -1*noiseresponse(:,2:2:end);
-    avgnoise = mean(noiseresponse,2);
+    avgnoise = mean(noiseresponse,2,"omitnan");
 
     % get the fft of the mean_response
     fft_out(whichf, 1:N_signal2) = fft(w.*mean_response(:,whichf), N_signal2);
